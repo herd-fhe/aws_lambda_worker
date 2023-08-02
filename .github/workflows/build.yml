@@ -1,0 +1,67 @@
+name: Build
+
+on:
+  pull_request:
+  workflow_call:
+    inputs:
+      deploy-artifacts:
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install gcc
+        run: |
+          sudo apt update
+          sudo apt install gcc-11 g++-11
+        shell: bash
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install build-essential binutils autoconf libtool pkg-config libomp-dev ninja-build curl libcurl4-openssl-dev zip
+        shell: bash
+
+      - uses: ./lambda/worker/proto/action/install-grpc
+        with:
+          prefix: ${{ github.workspace }}/external/grpc
+          parallel: '16'
+
+      - uses: ./lambda/worker/common/action/install-openfhe
+        with:
+          prefix: ${{ github.workspace }}/external/openfhe
+          parallel: '4'
+
+      - uses: ./action/install-aws-lambda-runtime
+        with:
+          prefix: ${{ github.workspace }}/external/aws-lambda-runtime
+          parallel: '4'
+
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}/build
+        run: cmake -GNinja $GITHUB_WORKSPACE/lambda -DCMAKE_VERBOSE_BUILD=1 -DCMAKE_BUILD_TYPE=Release
+        env:
+          CC: gcc-11
+          CXX: g++-11
+
+      - name: Ubuntu fix
+        run: sudo sed -i 's/libc_libs+=($(package_libc_rpm))//g' /usr/local/lib/aws-lambda-runtime/cmake/packager
+
+      - name: Build
+        working-directory: ${{ github.workspace }}/build
+        run: cmake --build . --config Release -v --target aws-lambda-package-aws_lambda_worker -j 6
+
+      - name: Upload artifacts
+        if: inputs.deploy-artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: aws-executor-worker
+          path: ${{ github.workspace }}/build/aws_lambda_worker.zip

@@ -1,0 +1,47 @@
+name: Publish lambda worker artifacts
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  build_test:
+    name: 'Build & test'
+    uses: ./.github/workflows/test.yml
+
+  deploy:
+    name: 'Release'
+    needs: [build_test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download worker artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: aws-executor-worker
+          path: ${{github.workspace}}
+
+      - name: Prepare release directory
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          mkdir release
+
+      - name: Copy artifacts
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          cp ${GITHUB_WORKSPACE}/aws_lambda_worker.zip ${GITHUB_WORKSPACE}/release/
+
+      - name: Pack artifacts
+        working-directory: ${{github.workspace}}
+        shell: bash
+        run: |
+          tar -czvf herdsman-lambda-worker.tar.gz release
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: ${{github.workspace}}/herdsman-lambda-worker.tar.gz
+          name: herdsman-lambda-worker-${{github.ref_name}}

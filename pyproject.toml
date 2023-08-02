@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "aws-lambda-worker"
+version = "0.1.0"
+description = ""
+authors = ["Xert <xertdev@gmail.com>"]
+readme = "README.md"
+packages = [{include = "aws_lambda_worker"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+pytest = "^7.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

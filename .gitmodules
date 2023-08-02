@@ -1,0 +1,6 @@
+[submodule "lambda/worker"]
+	path = lambda/worker
+	url = https://github.com/herd-fhe/executor_worker.git
+[submodule "lambda/third-party/json"]
+	path = lambda/third-party/json
+	url = https://github.com/nlohmann/json.git
