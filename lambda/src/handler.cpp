@@ -23,8 +23,8 @@
 
 using namespace aws::lambda_runtime;
 
-Handler::Handler(Config config)
-:	config_(std::move(config))
+Handler::Handler(LambdaConfig lambda_config)
+:	lambda_config_(std::move(lambda_config))
 {
 }
 
@@ -35,8 +35,22 @@ invocation_response Handler::operator()(const invocation_request& request)
 	try
 	{
 		const auto json_payload = nlohmann::json::parse(request.payload);
-		const auto json_body = extract_body(json_payload);
-		decoded_json = decode_json(json_body);
+
+		switch(lambda_config_.invoker_type)
+		{
+			using enum InvokerType;
+			case API_CALL:
+			{
+				const auto json_body = extract_body(json_payload);
+				decoded_json = decode_json(json_body);
+				break;
+			}
+			case DIRECT:
+			{
+				decoded_json = decode_json(json_payload);
+				break;
+			}
+		}
 	}
 	catch (const nlohmann::json::exception& exception)
 	{
@@ -110,9 +124,9 @@ void Handler::map(const DecodedJson& payload)
 
 	try
 	{
-		executor.set_crypto(crypto::CryptoFactory::create_crypto(crypto_key_ptr, session_uuid, config_.key_base_dir));
-		executor.add_input(data::load_input(input_data_frame_ptr, circuit.inputs[0], session_uuid, config_.storage_base_dir));
-		executor.set_output(data::load_output(output_data_frame_ptr, circuit.output, session_uuid, config_.storage_base_dir));
+		executor.set_crypto(crypto::CryptoFactory::create_crypto(crypto_key_ptr, session_uuid, lambda_config_.base_config.key_base_dir));
+		executor.add_input(data::load_input(input_data_frame_ptr, circuit.inputs[0], session_uuid, lambda_config_.base_config.storage_base_dir));
+		executor.set_output(data::load_output(output_data_frame_ptr, circuit.output, session_uuid, lambda_config_.base_config.storage_base_dir));
 	}
 	catch(const herd::common::IOError& error)
 	{
@@ -180,12 +194,12 @@ void Handler::reduce(const DecodedJson& payload)
 
 	try
 	{
-		executor.set_crypto(crypto::CryptoFactory::create_crypto(crypto_key_ptr, session_uuid, config_.key_base_dir));
+		executor.set_crypto(crypto::CryptoFactory::create_crypto(crypto_key_ptr, session_uuid, lambda_config_.base_config.key_base_dir));
 		for(std::size_t i = 0; i < input_data_frame_ptrs.size(); ++i)
 		{
-			executor.add_input(data::load_input(input_data_frame_ptrs[i], circuit.inputs[i], session_uuid, config_.storage_base_dir));
+			executor.add_input(data::load_input(input_data_frame_ptrs[i], circuit.inputs[i], session_uuid, lambda_config_.base_config.storage_base_dir));
 		}
-		executor.set_output(data::load_output(output_data_frame_ptr, circuit.output, session_uuid, config_.storage_base_dir));
+		executor.set_output(data::load_output(output_data_frame_ptr, circuit.output, session_uuid, lambda_config_.base_config.storage_base_dir));
 	}
 	catch(const herd::common::IOError& error)
 	{
