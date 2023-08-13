@@ -5,6 +5,7 @@
 
 namespace
 {
+	constexpr const char* const BODY_KEY = "body";
 	constexpr const char* const TYPE_KEY = "type";
 	constexpr const char* const DATA_KEY = "data";
 
@@ -25,28 +26,45 @@ namespace
 	}
 }
 
-DecodedJson decode_json(const nlohmann::json& payload)
+nlohmann::json extract_body(const nlohmann::json& payload)
+{
+	if(!payload.contains(BODY_KEY))
+	{
+		throw InvalidPayloadError("No body!");
+	}
+
+	const auto& body = payload.at(BODY_KEY);
+
+	if(!body.is_string())
+	{
+		throw InvalidPayloadError("Body is not a string!");
+	}
+
+	return nlohmann::json::parse(body.get<std::string>());
+}
+
+DecodedJson decode_json(const nlohmann::json& body)
 {
 	DecodedJson decoded_json{};
 
 	try
 	{
-		if(!payload.contains(TYPE_KEY))
+		if(!body.contains(TYPE_KEY))
 		{
 			throw InvalidPayloadError("No type!");
 		}
 
 		{
-			const auto json_type = payload.at(TYPE_KEY).get<std::string>();
+			const auto json_type = body.at(TYPE_KEY).get<std::string>();
 			decoded_json.type = map_type(json_type);
 		}
 
-		if(!payload.contains(DATA_KEY))
+		if(!body.contains(DATA_KEY))
 		{
 			throw InvalidPayloadError("No data!");
 		}
 
-		const auto& data = payload.at(DATA_KEY);
+		const auto& data = body.at(DATA_KEY);
 
 		if(!data.is_array())
 		{

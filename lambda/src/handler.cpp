@@ -35,7 +35,8 @@ invocation_response Handler::operator()(const invocation_request& request)
 	try
 	{
 		const auto json_payload = nlohmann::json::parse(request.payload);
-		decoded_json = decode_json(json_payload);
+		const auto json_body = extract_body(json_payload);
+		decoded_json = decode_json(json_body);
 	}
 	catch (const nlohmann::json::exception& exception)
 	{
