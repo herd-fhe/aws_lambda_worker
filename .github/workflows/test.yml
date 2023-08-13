@@ -96,7 +96,7 @@ jobs:
         shell: bash
 
       - name: Run tests
-        working-directory: ${{github.workspace}}/test
+        working-directory: ${{github.workspace}}/test/src
         env:
           TEST_HOME: ${{github.workspace}}/test_home/
           KEY_BASE_DIR: ${{github.workspace}}/worker_home/keys
@@ -191,7 +191,7 @@ jobs:
         shell: bash
 
       - name: Run tests
-        working-directory: ${{github.workspace}}/test
+        working-directory: ${{github.workspace}}/test/src
         env:
           TEST_HOME: ${{github.workspace}}/test_home/
           KEY_BASE_DIR: ${{github.workspace}}/worker_home/keys

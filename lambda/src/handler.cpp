@@ -30,7 +30,7 @@ Handler::Handler(LambdaConfig lambda_config)
 
 invocation_response Handler::operator()(const invocation_request& request)
 {
-	DecodedJson decoded_json;
+	DecodedJson decoded_json{};
 
 	try
 	{
