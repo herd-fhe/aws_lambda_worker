@@ -1,4 +1,5 @@
 import shutil
+import json
 import tempfile
 import subprocess
 import os
@@ -42,9 +43,12 @@ def reduce_task(address, task: ReduceTask):
 
     data = task.SerializeToString()
     data = [val for val in data]
-    payload = {
+    body = {
         "type": "REDUCE",
         "data": data
+    }
+    payload = {
+        "body": json.dumps(body)
     }
     requests.post(address, json=payload)
 
@@ -54,9 +58,12 @@ def map_task(address, task: MapTask):
 
     data = task.SerializeToString()
     data = [val for val in data]
-    payload = {
+    body = {
         "type": "MAP",
         "data": data
+    }
+    payload = {
+        "body": json.dumps(body)
     }
     return requests.post(address, json=payload)
 

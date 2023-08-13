@@ -15,6 +15,7 @@ struct DecodedJson
 	std::vector<uint8_t> data;
 };
 
-DecodedJson decode_json(const nlohmann::json& payload);
+nlohmann::json extract_body(const nlohmann::json& payload);
+DecodedJson decode_json(const nlohmann::json& body);
 
 #endif //AWS_LAMBDA_WORKER_JSON_DECODER_HPP
