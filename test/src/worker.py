@@ -38,7 +38,7 @@ def decrypt_data(temp_dir, session, output_data_frame, row_size, row_count):
     return result.stdout.decode().split("\n")[:-1]
 
 
-def reduce_task(address, task: ReduceTask):
+def reduce_task(address, task: ReduceTask, api_gateway_call=False):
     os.makedirs(os.path.join(storage_dir, task.session_uuid, task.output_data_frame_ptr.data_frame_uuid), exist_ok=True)
 
     data = task.SerializeToString()
@@ -47,13 +47,17 @@ def reduce_task(address, task: ReduceTask):
         "type": "REDUCE",
         "data": data
     }
-    payload = {
-        "body": json.dumps(body)
-    }
-    requests.post(address, json=payload)
+
+    if api_gateway_call:
+        payload = {
+            "body": json.dumps(body)
+        }
+        return requests.post(address, json=payload)
+    else:
+        return requests.post(address, json=body)
 
 
-def map_task(address, task: MapTask):
+def map_task(address, task: MapTask, api_gateway_call=False):
     os.makedirs(os.path.join(storage_dir, task.session_uuid, task.output_data_frame_ptr.data_frame_uuid), exist_ok=True)
 
     data = task.SerializeToString()
@@ -62,10 +66,14 @@ def map_task(address, task: MapTask):
         "type": "MAP",
         "data": data
     }
-    payload = {
-        "body": json.dumps(body)
-    }
-    return requests.post(address, json=payload)
+
+    if api_gateway_call:
+        payload = {
+            "body": json.dumps(body)
+        }
+        return requests.post(address, json=payload)
+    else:
+        return requests.post(address, json=body)
 
 
 def random_uuid():

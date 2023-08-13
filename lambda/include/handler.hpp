@@ -3,14 +3,14 @@
 
 #include <aws/lambda-runtime/runtime.h>
 
-#include "base_runtime/config.hpp"
+#include "lambda_config.hpp"
 #include "json_decoder.hpp"
 
 
 class Handler
 {
 public:
-	explicit Handler(Config config);
+	explicit Handler(LambdaConfig lambda_config);
 
 	aws::lambda_runtime::invocation_response operator()(const aws::lambda_runtime::invocation_request& request);
 
@@ -18,7 +18,7 @@ public:
 	void reduce(const DecodedJson& payload);
 
 private:
-	Config config_;
+	LambdaConfig lambda_config_;
 };
 
 #endif // AWS_LAMBDA_WORKER_HANDLER_HPP

@@ -13,8 +13,8 @@ jobs:
     with:
       deploy-artifacts: true
 
-  test:
-    name: 'Run tests'
+  test_direct:
+    name: 'Run tests direct'
     needs: [build]
     runs-on: ubuntu-latest
     steps:
@@ -91,12 +91,12 @@ jobs:
           cd ${{github.workspace}}/worker_home
           mkdir keys
           mkdir storage
-          docker run -e "LOG_LEVEL=debug" -e "KEY_BASE_DIR=/lambda/temp/keys" -e "STORAGE_BASE_DIR=/lambda/temp/storage" -v "${{github.workspace}}/worker_home:/lambda/temp" -p $WORKER_PORT:8080 --name test_image -d test_image          
+          docker run -e "INVOKER=DIRECT" -e "LOG_LEVEL=debug" -e "KEY_BASE_DIR=/lambda/temp/keys" -e "STORAGE_BASE_DIR=/lambda/temp/storage" -v "${{github.workspace}}/worker_home:/lambda/temp" -p $WORKER_PORT:8080 --name test_image -d test_image          
           sleep 5
         shell: bash
 
       - name: Run tests
-        working-directory: ${{github.workspace}}/test
+        working-directory: ${{github.workspace}}/test/src
         env:
           TEST_HOME: ${{github.workspace}}/test_home/
           KEY_BASE_DIR: ${{github.workspace}}/worker_home/keys
@@ -104,6 +104,101 @@ jobs:
           WORKER_PORT: 5555
         run: |
           source $(poetry env info --path)/bin/activate
-          pytest
+          pytest direct
+          docker container logs test_image
+        shell: bash
+
+  test_api_call:
+    name: 'Run tests api call'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install gcc
+        run: |
+          sudo apt update
+          sudo apt install gcc-11 g++-11
+        shell: bash
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install build-essential autoconf python3.11 python3-poetry libtool pkg-config libomp-dev libprotobuf-dev ninja-build clang-15 libclang-15-dev
+        shell: bash
+
+      - uses: ./lambda/worker/common/action/install-openfhe
+        with:
+          prefix: ${{ github.workspace }}/external/openfhe
+          parallel: '4'
+
+      - name: Download worker artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: aws-executor-worker
+          path: ${{github.workspace}}/test/image/build
+
+      - name: Install python dependencies
+        working-directory: ${{github.workspace}}/test
+        # temporary workaround (poetry lock)
+        run: |
+          rm poetry.lock
+          poetry install --no-interaction --no-root
+        shell: bash
+
+      - name: Build protobuf lib
+        working-directory: ${{github.workspace}}/test
+        run: |
+          source $(poetry env info --path)/bin/activate
+          cd ${{github.workspace}}/test
+          make
+        shell: bash
+
+      - name: Build test image
+        working-directory: ${{github.workspace}}
+        run: |
+          docker build -t test_image -f test/image/Dockerfile test/image
+        shell: bash
+
+      - name: Download crypto tool
+        uses: robinraju/release-downloader@v1.8
+        with:
+          repository: "herd-fhe/executor_worker"
+          tag: "v0.0.1"
+
+      - name: Unzip tools
+        working-directory: ${{github.workspace}}
+        run: |
+          mkdir test_home
+          tar -xvf herdsman-worker.tar.gz -C ${{github.workspace}}/test_home
+          mv test_home/release/crypto_tool test_home/crypto_tool
+          chmod +x test_home/crypto_tool
+        shell: bash
+
+      - name: Spin up worker
+        env:
+          WORKER_PORT: 5555
+        run: |
+          mkdir -p ${{github.workspace}}/worker_home
+          cd ${{github.workspace}}/worker_home
+          mkdir keys
+          mkdir storage
+          docker run -e "INVOKER=API_CALL" -e "LOG_LEVEL=debug" -e "KEY_BASE_DIR=/lambda/temp/keys" -e "STORAGE_BASE_DIR=/lambda/temp/storage" -v "${{github.workspace}}/worker_home:/lambda/temp" -p $WORKER_PORT:8080 --name test_image -d test_image          
+          sleep 5
+        shell: bash
+
+      - name: Run tests
+        working-directory: ${{github.workspace}}/test/src
+        env:
+          TEST_HOME: ${{github.workspace}}/test_home/
+          KEY_BASE_DIR: ${{github.workspace}}/worker_home/keys
+          STORAGE_BASE_DIR: ${{github.workspace}}/worker_home/storage
+          WORKER_PORT: 5555
+        run: |
+          source $(poetry env info --path)/bin/activate
+          pytest api_call
           docker container logs test_image
         shell: bash
