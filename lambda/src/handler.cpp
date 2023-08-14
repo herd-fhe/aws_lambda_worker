@@ -19,6 +19,7 @@
 
 #include "json_decoder.hpp"
 #include "exception.hpp"
+#include "response_helper.hpp"
 
 
 using namespace aws::lambda_runtime;
@@ -54,11 +55,11 @@ invocation_response Handler::operator()(const invocation_request& request)
 	}
 	catch (const nlohmann::json::exception& exception)
 	{
-		return invocation_response::failure("Invalid json", "RUNTIME");
+		return response::error("Invalid json", response::ErrorStatus::BAD_REQUEST);
 	}
 	catch (const InvalidPayloadError& exception)
 	{
-		return invocation_response::failure(exception.what(), "RUNTIME");
+		return response::error(exception.what(), response::ErrorStatus::BAD_REQUEST);
 	}
 
 	try
@@ -77,16 +78,16 @@ invocation_response Handler::operator()(const invocation_request& request)
 	}
 	catch(const std::runtime_error& exception)
 	{
-		return invocation_response::failure(exception.what(), "EXECUTOR");
+		return response::error(exception.what(), response::ErrorStatus::INTERNAL);
 	}
 
 	if(decoded_json.type == TaskType::ECHO)
 	{
-		return invocation_response::success(request.payload, "application/json");
+		return response::success(request.payload);
 	}
 	else
 	{
-		return invocation_response::success(R"({"status": "SUCCESS"})", "application/json");
+		return response::success("Task completed!");
 	}
 }
 
