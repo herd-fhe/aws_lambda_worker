@@ -33,12 +33,14 @@ target_sources(
         src/handler.cpp
         src/json_decoder.cpp
 		src/lambda_config.cpp
+		src/response_helper.cpp
 
         include/handler.hpp
         include/json_decoder.hpp
         include/task_type.hpp
 		include/lambda_config.hpp
         include/exception.hpp
+		include/response_helper.hpp
 )
 
 
