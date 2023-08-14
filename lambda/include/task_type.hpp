@@ -5,7 +5,8 @@
 enum class TaskType
 {
 	MAP,
-	REDUCE
+	REDUCE,
+	ECHO
 };
 
 #endif //AWS_LAMBDA_WORKER_TASK_TYPE_HPP
