@@ -1,6 +1,6 @@
 #include "handler.hpp"
 
-#include "aws/logging/logging.h"
+#include <aws/core/utils/logging/LogMacros.h>
 
 #include "herd/common/model/worker/crypto_key_ptr.hpp"
 #include "herd/common/model/worker/data_frame_ptr.hpp"
@@ -34,6 +34,7 @@ invocation_response Handler::operator()(const invocation_request& request)
 
 	try
 	{
+		AWS_LOGSTREAM_TRACE("worker", request.payload);
 		const auto json_payload = nlohmann::json::parse(request.payload);
 
 		switch(lambda_config_.invoker_type)
@@ -54,10 +55,14 @@ invocation_response Handler::operator()(const invocation_request& request)
 	}
 	catch (const nlohmann::json::exception& exception)
 	{
+		AWS_LOGSTREAM_ERROR("worker", exception.what());
+		AWS_LOGSTREAM_FLUSH();
 		return invocation_response::failure("Invalid json", "RUNTIME");
 	}
 	catch (const InvalidPayloadError& exception)
 	{
+		AWS_LOGSTREAM_ERROR("worker", exception.what())
+		AWS_LOGSTREAM_FLUSH();
 		return invocation_response::failure(exception.what(), "RUNTIME");
 	}
 
@@ -75,14 +80,17 @@ invocation_response Handler::operator()(const invocation_request& request)
 	}
 	catch(const std::runtime_error& exception)
 	{
+		AWS_LOGSTREAM_FLUSH();
 		return invocation_response::failure(exception.what(), "EXECUTOR");
 	}
 
+	AWS_LOGSTREAM_FLUSH();
 	return invocation_response::success("SUCCESS", "text/plain");
 }
 
 void Handler::map(const DecodedJson& payload)
 {
+	AWS_LOGSTREAM_INFO("worker", "Received map task");
 	herd::proto::MapTask task;
 	const auto& payload_data = payload.data;
 	if(!task.ParseFromArray(payload_data.data(), static_cast<int>(payload_data.size())))
@@ -106,20 +114,20 @@ void Handler::map(const DecodedJson& payload)
 	}
 	catch(const std::runtime_error& error)
 	{
-		aws::logging::log_error(error.what(), "MAP");
+		AWS_LOGSTREAM_ERROR("worker", error.what());
 		throw;
 	}
 
 	auto executor = Executor();
-	aws::logging::log_info("Starting Map task", "MAP");
-	aws::logging::log_info(
-			("Input data frame: "+ input_data_frame_ptr.pointer.uuid.as_string() + ":" + std::to_string(input_data_frame_ptr.pointer.partition)).c_str(),
-			"MAP"
+	AWS_LOGSTREAM_DEBUG("worker", "Starting Map task");
+	AWS_LOGSTREAM_DEBUG(
+			"worker",
+			"Input data frame: "+ input_data_frame_ptr.pointer.uuid.as_string() + ":" + std::to_string(input_data_frame_ptr.pointer.partition)
 	);
 
-	aws::logging::log_info(
-			("Output data frame: " + output_data_frame_ptr.uuid.as_string() + ":" + std::to_string(output_data_frame_ptr.partition)).c_str(),
-			"MAP"
+	AWS_LOGSTREAM_DEBUG(
+			"worker",
+			"Output data frame: " + output_data_frame_ptr.uuid.as_string() + ":" + std::to_string(output_data_frame_ptr.partition)
  	);
 
 	try
@@ -130,13 +138,13 @@ void Handler::map(const DecodedJson& payload)
 	}
 	catch(const herd::common::IOError& error)
 	{
-		aws::logging::log_error(error.what(), "MAP");
+		AWS_LOGSTREAM_ERROR("worker", error.what());
 		throw;
 	}
 
 	executor.set_circuit(std::move(circuit));
 
-	aws::logging::log_info("Loaded task requirements (input data frame, cloud key)", "MAP");
+	AWS_LOGSTREAM_DEBUG("worker", "Loaded task requirements (input data frame, cloud key)");
 
 	try
 	{
@@ -144,13 +152,14 @@ void Handler::map(const DecodedJson& payload)
 	}
 	catch(const ExecutorException& exception)
 	{
-		aws::logging::log_error(exception.what(), "MAP");
+		AWS_LOGSTREAM_ERROR("worker", exception.what());
 		throw;
 	}
 }
 
 void Handler::reduce(const DecodedJson& payload)
 {
+	AWS_LOGSTREAM_INFO("worker", "Received reduce task");
 	herd::proto::ReduceTask task;
 	const auto& payload_data = payload.data;
 	if(!task.ParseFromArray(payload_data.data(), static_cast<int>(payload_data.size())))
@@ -180,16 +189,15 @@ void Handler::reduce(const DecodedJson& payload)
 	}
 	catch(const std::runtime_error& error)
 	{
-		aws::logging::log_error(error.what(), "REDUCE");
+		AWS_LOGSTREAM_ERROR("worker", error.what());
 		throw;
 	}
 
 	auto executor = Executor();
 
-	aws::logging::log_info("Starting Reduce task", "REDUCE");
-	aws::logging::log_info(
-			("Output data frame: " + output_data_frame_ptr.uuid.as_string() + ":" + std::to_string(output_data_frame_ptr.partition)).c_str(),
-			"REDUCE"
+	AWS_LOGSTREAM_DEBUG("worker", "Starting Reduce task");
+	AWS_LOGSTREAM_DEBUG("worker",
+			("Output data frame: " + output_data_frame_ptr.uuid.as_string() + ":" + std::to_string(output_data_frame_ptr.partition))
 	);
 
 	try
@@ -203,13 +211,13 @@ void Handler::reduce(const DecodedJson& payload)
 	}
 	catch(const herd::common::IOError& error)
 	{
-		aws::logging::log_error(error.what(), "REDUCE");
+		AWS_LOGSTREAM_ERROR("worker", error.what());
 		throw;
 	}
 
 	executor.set_circuit(std::move(circuit));
 
-	aws::logging::log_info("Loaded task requirements (input data frame, cloud key)", "MAP");
+	AWS_LOGSTREAM_DEBUG("worker", "Loaded task requirements (input data frame, cloud key)");
 
 	try
 	{
@@ -217,7 +225,7 @@ void Handler::reduce(const DecodedJson& payload)
 	}
 	catch(const ExecutorException& exception)
 	{
-		aws::logging::log_error(exception.what(), "REDUCE");
+		AWS_LOGSTREAM_ERROR("worker", exception.what());
 		throw;
 	}
 }

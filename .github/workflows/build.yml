@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -24,8 +24,19 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install build-essential binutils autoconf libtool pkg-config libomp-dev ninja-build curl libcurl4-openssl-dev zip
+          sudo apt install build-essential binutils autoconf libtool pkg-config libssl3 libcrypto++-dev libomp-dev ninja-build curl libcurl4-openssl-dev zip
+          sudo apt install libssl-dev
         shell: bash
+
+      - uses: ./action/install-aws-lambda-runtime
+        with:
+          prefix: ${{ github.workspace }}/external/aws-lambda-runtime
+          parallel: '4'
+
+      - uses: ./action/install-aws-sdk
+        with:
+          prefix: ${{ github.workspace }}/external/aws-sdk
+          parallel: '4'
 
       - uses: ./lambda/worker/proto/action/install-grpc
         with:
@@ -35,11 +46,6 @@ jobs:
       - uses: ./lambda/worker/common/action/install-openfhe
         with:
           prefix: ${{ github.workspace }}/external/openfhe
-          parallel: '4'
-
-      - uses: ./action/install-aws-lambda-runtime
-        with:
-          prefix: ${{ github.workspace }}/external/aws-lambda-runtime
           parallel: '4'
 
       - name: Create Build Environment

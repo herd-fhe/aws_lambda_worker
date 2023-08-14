@@ -7,6 +7,8 @@ project(
 )
 
 #Libraries
+find_package(ZLIB)
+find_package(AWSSDK COMPONENTS core)
 find_package(aws-lambda-runtime REQUIRED)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(third-party/json)
@@ -20,6 +22,7 @@ target_link_libraries(
         aws_lambda_worker
         PUBLIC
         AWS::aws-lambda-runtime
+		${AWSSDK_LINK_LIBRARIES}
         nlohmann_json::nlohmann_json
 
         worker::base_runtime

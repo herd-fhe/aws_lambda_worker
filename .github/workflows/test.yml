@@ -91,12 +91,12 @@ jobs:
           cd ${{github.workspace}}/worker_home
           mkdir keys
           mkdir storage
-          docker run -e "INVOKER=DIRECT" -e "LOG_LEVEL=debug" -e "KEY_BASE_DIR=/lambda/temp/keys" -e "STORAGE_BASE_DIR=/lambda/temp/storage" -v "${{github.workspace}}/worker_home:/lambda/temp" -p $WORKER_PORT:8080 --name test_image -d test_image          
+          docker run -e "INVOKER=DIRECT" -e "LOG_LEVEL=DEBUG" -e "KEY_BASE_DIR=/lambda/temp/keys" -e "STORAGE_BASE_DIR=/lambda/temp/storage" -v "${{github.workspace}}/worker_home:/lambda/temp" -p $WORKER_PORT:8080 --name test_image -d test_image          
           sleep 5
         shell: bash
 
       - name: Run tests
-        working-directory: ${{github.workspace}}/test/src
+        working-directory: ${{github.workspace}}/test/
         env:
           TEST_HOME: ${{github.workspace}}/test_home/
           KEY_BASE_DIR: ${{github.workspace}}/worker_home/keys
@@ -104,8 +104,7 @@ jobs:
           WORKER_PORT: 5555
         run: |
           source $(poetry env info --path)/bin/activate
-          pytest direct
-          docker container logs test_image
+          pytest src/direct || docker container logs test_image
         shell: bash
 
   test_api_call:
@@ -186,12 +185,12 @@ jobs:
           cd ${{github.workspace}}/worker_home
           mkdir keys
           mkdir storage
-          docker run -e "INVOKER=API_CALL" -e "LOG_LEVEL=debug" -e "KEY_BASE_DIR=/lambda/temp/keys" -e "STORAGE_BASE_DIR=/lambda/temp/storage" -v "${{github.workspace}}/worker_home:/lambda/temp" -p $WORKER_PORT:8080 --name test_image -d test_image          
+          docker run -e "INVOKER=API_CALL" -e "LOG_LEVEL=DEBUG" -e "KEY_BASE_DIR=/lambda/temp/keys" -e "STORAGE_BASE_DIR=/lambda/temp/storage" -v "${{github.workspace}}/worker_home:/lambda/temp" -p $WORKER_PORT:8080 --name test_image -d test_image          
           sleep 5
         shell: bash
 
       - name: Run tests
-        working-directory: ${{github.workspace}}/test/src
+        working-directory: ${{github.workspace}}/test/
         env:
           TEST_HOME: ${{github.workspace}}/test_home/
           KEY_BASE_DIR: ${{github.workspace}}/worker_home/keys
@@ -199,6 +198,5 @@ jobs:
           WORKER_PORT: 5555
         run: |
           source $(poetry env info --path)/bin/activate
-          pytest api_call
-          docker container logs test_image
+          pytest src/api_call || docker container logs test_image
         shell: bash
