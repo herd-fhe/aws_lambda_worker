@@ -82,11 +82,11 @@ invocation_response Handler::operator()(const invocation_request& request)
 
 	if(decoded_json.type == TaskType::ECHO)
 	{
-		return invocation_response::success(request.payload, "text/plain");
+		return invocation_response::success(request.payload, "application/json");
 	}
 	else
 	{
-		return invocation_response::success("SUCCESS", "text/plain");
+		return invocation_response::success(R"({"status": "SUCCESS"})", "application/json");
 	}
 }
 
