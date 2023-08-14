@@ -72,7 +72,7 @@ def test_invalid_frame_ptr(address, crypto_tool, session, key: Tuple[str, str]):
         )
     )
 
-    assert "errorMessage" in map_task(address, task).json()
+    assert map_task(address, task).json()["statusCode"] != 200
 
 
 def test_invalid_key_ptr(address, crypto_tool, key: Tuple[str, str]):
@@ -161,4 +161,4 @@ def test_invalid_key_ptr(address, crypto_tool, key: Tuple[str, str]):
         )
     )
 
-    assert "errorMessage" in map_task(address, task).json()
+    assert map_task(address, task).json()["statusCode"] != 200

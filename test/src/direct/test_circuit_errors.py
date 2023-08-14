@@ -83,7 +83,7 @@ def test_wrong_out_bit(address, crypto_tool, session, key: Tuple[str, str]):
         )
     )
 
-    assert "errorMessage" in map_task(address, task).json()
+    assert map_task(address, task).json()["statusCode"] != 200
 
 
 def test_wrong_out_tuple(address, crypto_tool, session, key: Tuple[str, str]):
@@ -159,7 +159,7 @@ def test_wrong_out_tuple(address, crypto_tool, session, key: Tuple[str, str]):
         )
     )
 
-    assert "errorMessage" in map_task(address, task).json()
+    assert map_task(address, task).json()["statusCode"] != 200
 
 
 def test_wrong_in_tuple(address, crypto_tool, session, key: Tuple[str, str]):
@@ -247,7 +247,7 @@ def test_wrong_in_tuple(address, crypto_tool, session, key: Tuple[str, str]):
         )
     )
 
-    assert "errorMessage" in map_task(address, task).json()
+    assert map_task(address, task).json()["statusCode"] != 200
 
 
 def test_wrong_in_field(address, crypto_tool, session, key: Tuple[str, str]):
@@ -335,7 +335,7 @@ def test_wrong_in_field(address, crypto_tool, session, key: Tuple[str, str]):
         )
     )
 
-    assert "errorMessage" in map_task(address, task).json()
+    assert map_task(address, task).json()["statusCode"] != 200
 
 
 def test_wrong_in_bit(address, crypto_tool, session, key: Tuple[str, str]):
@@ -423,4 +423,4 @@ def test_wrong_in_bit(address, crypto_tool, session, key: Tuple[str, str]):
         )
     )
 
-    assert "errorMessage" in map_task(address, task).json()
+    assert map_task(address, task).json()["statusCode"] != 200
