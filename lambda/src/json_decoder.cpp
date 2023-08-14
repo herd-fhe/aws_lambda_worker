@@ -19,6 +19,10 @@ namespace
 		{
 			return TaskType::REDUCE;
 		}
+		else if(type_str == "ECHO")
+		{
+			return TaskType::ECHO;
+		}
 		else
 		{
 			throw InvalidPayloadError("Invalid task type!");
@@ -57,6 +61,11 @@ DecodedJson decode_json(const nlohmann::json& body)
 		{
 			const auto json_type = body.at(TYPE_KEY).get<std::string>();
 			decoded_json.type = map_type(json_type);
+		}
+
+		if(decoded_json.type == TaskType::ECHO)
+		{
+			return decoded_json;
 		}
 
 		if(!body.contains(DATA_KEY))

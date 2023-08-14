@@ -71,6 +71,8 @@ invocation_response Handler::operator()(const invocation_request& request)
 			case TaskType::REDUCE:
 				reduce(decoded_json);
 				break;
+			case TaskType::ECHO:
+				break;
 		}
 	}
 	catch(const std::runtime_error& exception)
@@ -78,7 +80,14 @@ invocation_response Handler::operator()(const invocation_request& request)
 		return invocation_response::failure(exception.what(), "EXECUTOR");
 	}
 
-	return invocation_response::success("SUCCESS", "text/plain");
+	if(decoded_json.type == TaskType::ECHO)
+	{
+		return invocation_response::success(request.payload, "text/plain");
+	}
+	else
+	{
+		return invocation_response::success("SUCCESS", "text/plain");
+	}
 }
 
 void Handler::map(const DecodedJson& payload)
