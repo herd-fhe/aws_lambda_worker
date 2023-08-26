@@ -1,21 +1,24 @@
 #include <aws/lambda-runtime/runtime.h>
 #include <aws/logging/logging.h>
 
-#include "lambda_config.hpp"
-#include "handler.hpp"
+#include <spdlog/cfg/env.h>
 
+#include "handler.hpp"
+#include "lambda_config.hpp"
 
 
 using namespace aws::lambda_runtime;
 
 int main()
 {
-  LambdaConfig lambda_config = load_lambda_config();
-  aws::logging::log_info(("Storage directory: " + lambda_config.base_config.storage_base_dir.string()).c_str(), "INFO");
-  aws::logging::log_info(("Keys directory: " + lambda_config.base_config.key_base_dir.string()).c_str(), "INFO");
+	spdlog::cfg::load_env_levels();
 
-  Handler handler(lambda_config);
+	LambdaConfig lambda_config = load_lambda_config();
+	aws::logging::log_info(("Storage directory: " + lambda_config.base_config.storage_base_dir.string()).c_str(), "INFO");
+	aws::logging::log_info(("Keys directory: " + lambda_config.base_config.key_base_dir.string()).c_str(), "INFO");
 
-  run_handler(handler);
-  return 0;
+	Handler handler(lambda_config);
+
+	run_handler(handler);
+	return 0;
 }

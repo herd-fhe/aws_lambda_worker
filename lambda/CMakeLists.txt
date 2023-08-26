@@ -21,8 +21,9 @@ target_link_libraries(
         PUBLIC
         AWS::aws-lambda-runtime
         nlohmann_json::nlohmann_json
+		spdlog::spdlog_header_only
 
-        worker::base_runtime
+		worker::base_runtime
 )
 
 target_sources(
