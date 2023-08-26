@@ -1,6 +1,6 @@
 #include "handler.hpp"
 
-#include "aws/logging/logging.h"
+#include <spdlog/spdlog.h>
 
 #include "herd/common/model/worker/crypto_key_ptr.hpp"
 #include "herd/common/model/worker/data_frame_ptr.hpp"
@@ -116,20 +116,20 @@ void Handler::map(const DecodedJson& payload)
 	}
 	catch(const std::runtime_error& error)
 	{
-		aws::logging::log_error(error.what(), "MAP");
+		spdlog::error(error.what());
 		throw;
 	}
 
 	auto executor = Executor();
-	aws::logging::log_info("Starting Map task", "MAP");
-	aws::logging::log_info(
-			("Input data frame: "+ input_data_frame_ptr.pointer.uuid.as_string() + ":" + std::to_string(input_data_frame_ptr.pointer.partition)).c_str(),
-			"MAP"
+	spdlog::info("Starting Map task");
+	spdlog::info("Input data frame: {}:{}",
+			input_data_frame_ptr.pointer.uuid.as_string(),
+			input_data_frame_ptr.pointer.partition
 	);
 
-	aws::logging::log_info(
-			("Output data frame: " + output_data_frame_ptr.uuid.as_string() + ":" + std::to_string(output_data_frame_ptr.partition)).c_str(),
-			"MAP"
+	spdlog::info("Output data frame: {}:{}",
+			output_data_frame_ptr.uuid.as_string(),
+			output_data_frame_ptr.partition
  	);
 
 	try
@@ -140,13 +140,13 @@ void Handler::map(const DecodedJson& payload)
 	}
 	catch(const herd::common::IOError& error)
 	{
-		aws::logging::log_error(error.what(), "MAP");
+		spdlog::error(error.what());
 		throw;
 	}
 
 	executor.set_circuit(std::move(circuit));
 
-	aws::logging::log_info("Loaded task requirements (input data frame, cloud key)", "MAP");
+	spdlog::info("Loaded task requirements (input data frame, cloud key)");
 
 	try
 	{
@@ -154,7 +154,7 @@ void Handler::map(const DecodedJson& payload)
 	}
 	catch(const ExecutorException& exception)
 	{
-		aws::logging::log_error(exception.what(), "MAP");
+		spdlog::error(exception.what());
 		throw;
 	}
 }
@@ -190,16 +190,16 @@ void Handler::reduce(const DecodedJson& payload)
 	}
 	catch(const std::runtime_error& error)
 	{
-		aws::logging::log_error(error.what(), "REDUCE");
+		spdlog::error(error.what());
 		throw;
 	}
 
 	auto executor = Executor();
 
-	aws::logging::log_info("Starting Reduce task", "REDUCE");
-	aws::logging::log_info(
-			("Output data frame: " + output_data_frame_ptr.uuid.as_string() + ":" + std::to_string(output_data_frame_ptr.partition)).c_str(),
-			"REDUCE"
+	spdlog::info("Starting Reduce task");
+	spdlog::info("Output data frame: {}:{}",
+			output_data_frame_ptr.uuid.as_string(),
+			output_data_frame_ptr.partition
 	);
 
 	try
@@ -213,13 +213,13 @@ void Handler::reduce(const DecodedJson& payload)
 	}
 	catch(const herd::common::IOError& error)
 	{
-		aws::logging::log_error(error.what(), "REDUCE");
+		spdlog::error(error.what());
 		throw;
 	}
 
 	executor.set_circuit(std::move(circuit));
 
-	aws::logging::log_info("Loaded task requirements (input data frame, cloud key)", "MAP");
+	spdlog::info("Loaded task requirements (input data frame, cloud key)");
 
 	try
 	{
@@ -227,7 +227,7 @@ void Handler::reduce(const DecodedJson& payload)
 	}
 	catch(const ExecutorException& exception)
 	{
-		aws::logging::log_error(exception.what(), "REDUCE");
+		spdlog::error(exception.what());
 		throw;
 	}
 }
