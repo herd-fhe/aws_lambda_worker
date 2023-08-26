@@ -1,5 +1,4 @@
 #include <aws/lambda-runtime/runtime.h>
-#include <aws/logging/logging.h>
 
 #include <spdlog/cfg/env.h>
 
@@ -14,8 +13,8 @@ int main()
 	spdlog::cfg::load_env_levels();
 
 	LambdaConfig lambda_config = load_lambda_config();
-	aws::logging::log_info(("Storage directory: " + lambda_config.base_config.storage_base_dir.string()).c_str(), "INFO");
-	aws::logging::log_info(("Keys directory: " + lambda_config.base_config.key_base_dir.string()).c_str(), "INFO");
+	spdlog::info("Storage directory: {}", lambda_config.base_config.storage_base_dir.string());
+	spdlog::info("Keys directory: {}", lambda_config.base_config.key_base_dir.string());
 
 	Handler handler(lambda_config);
 
