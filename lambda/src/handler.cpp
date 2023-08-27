@@ -207,7 +207,7 @@ void Handler::reduce(const DecodedJson& payload)
 		executor.set_crypto(crypto::CryptoFactory::create_crypto(crypto_key_ptr, session_uuid, lambda_config_.base_config.key_base_dir));
 		for(std::size_t i = 0; i < input_data_frame_ptrs.size(); ++i)
 		{
-			executor.add_input(data::load_input(input_data_frame_ptrs[i], circuit.inputs[i], session_uuid, lambda_config_.base_config.storage_base_dir));
+			executor.add_input(data::load_input(input_data_frame_ptrs[i], circuit.inputs[0], session_uuid, lambda_config_.base_config.storage_base_dir));
 		}
 		executor.set_output(data::load_output(output_data_frame_ptr, circuit.output, session_uuid, lambda_config_.base_config.storage_base_dir));
 	}
