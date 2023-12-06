@@ -23,7 +23,7 @@ runs:
       uses: actions/checkout@v2
       with:
         repository: awslabs/aws-lambda-cpp
-        ref: v0.2.8
+        ref: v0.2.10
         path: ${{ inputs.prefix }}
         submodules: true
 
