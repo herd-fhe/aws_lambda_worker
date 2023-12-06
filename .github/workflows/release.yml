@@ -22,26 +22,35 @@ jobs:
           name: aws-executor-worker
           path: ${{github.workspace}}
 
+      - name: Download worker debug artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: aws-executor-worker-debug
+          path: ${{github.workspace}}
+
       - name: Prepare release directory
         working-directory: ${{github.workspace}}
         shell: bash
         run: |
           mkdir release
+          mkdir release-debug
 
       - name: Copy artifacts
         working-directory: ${{github.workspace}}
         shell: bash
         run: |
           cp ${GITHUB_WORKSPACE}/aws_lambda_worker.zip ${GITHUB_WORKSPACE}/release/
+          cp ${GITHUB_WORKSPACE}/aws_lambda_worker-debug.zip ${GITHUB_WORKSPACE}/release-debug/
 
       - name: Pack artifacts
         working-directory: ${{github.workspace}}
         shell: bash
         run: |
           tar -czvf herdsman-lambda-worker.tar.gz release
+          tar -czvf herdsman-lambda-worker-debug.tar.gz release-debug
 
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: ${{github.workspace}}/herdsman-lambda-worker.tar.gz
+          artifacts: ${{github.workspace}}/herdsman-lambda-worker.tar.gz, ${{github.workspace}}/herdsman-lambda-worker-debug.tar.gz
           name: herdsman-lambda-worker-${{github.ref_name}}
