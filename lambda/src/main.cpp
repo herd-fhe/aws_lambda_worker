@@ -12,9 +12,11 @@ int main()
 {
 	spdlog::cfg::load_env_levels();
 
-	LambdaConfig lambda_config = load_lambda_config();
+	spdlog::info("Configuration loading...");
+	const LambdaConfig lambda_config = load_lambda_config();
 	spdlog::info("Storage directory: {}", lambda_config.base_config.storage_base_dir.string());
 	spdlog::info("Keys directory: {}", lambda_config.base_config.key_base_dir.string());
+	spdlog::info("API mode: {}", lambda_config.invoker_type == InvokerType::DIRECT ? "DIRECT" : "API_CALL");
 
 	Handler handler(lambda_config);
 

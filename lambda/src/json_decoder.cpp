@@ -47,9 +47,9 @@ nlohmann::json extract_body(const nlohmann::json& payload)
 	return nlohmann::json::parse(body.get<std::string>());
 }
 
-DecodedJson decode_json(const nlohmann::json& body)
+TaskDefinition decode_json(const nlohmann::json& body)
 {
-	DecodedJson decoded_json{};
+	TaskDefinition decoded_json{};
 
 	try
 	{

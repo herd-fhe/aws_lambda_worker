@@ -14,8 +14,8 @@ public:
 
 	aws::lambda_runtime::invocation_response operator()(const aws::lambda_runtime::invocation_request& request);
 
-	void map(const DecodedJson& payload);
-	void reduce(const DecodedJson& payload);
+	void map(const TaskDefinition& payload);
+	void reduce(const TaskDefinition& payload);
 
 private:
 	LambdaConfig lambda_config_;
