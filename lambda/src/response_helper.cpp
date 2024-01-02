@@ -1,5 +1,8 @@
 #include "response_helper.hpp"
 
+
+#include "spdlog/spdlog.h"
+
 #include <nlohmann/json.hpp>
 
 namespace response
@@ -47,6 +50,7 @@ namespace response
 		payload["headers"]["Content-Type"] = "application/json";
 		payload["body"] = body.dump();
 
+		spdlog::debug("Responding with success (200): {}", payload.dump().c_str());
 		return aws::lambda_runtime::invocation_response::success(payload.dump(), CONTENT_TYPE);
 	}
 
@@ -63,5 +67,6 @@ namespace response
 		payload["headers"]["Content-Type"] = "application/json";
 		payload["body"] = body.dump();
 
+		spdlog::debug("Responding with error ({}): {}", map_error_status_to_code(status), payload.dump().c_str());
 		return aws::lambda_runtime::invocation_response::success(payload.dump(), CONTENT_TYPE);	}
 }

@@ -17,8 +17,8 @@
 
 #include "worker.pb.h"
 
-#include "json_decoder.hpp"
 #include "exception.hpp"
+#include "json_decoder.hpp"
 #include "response_helper.hpp"
 
 
@@ -31,7 +31,7 @@ Handler::Handler(LambdaConfig lambda_config)
 
 invocation_response Handler::operator()(const invocation_request& request)
 {
-	DecodedJson decoded_json{};
+	TaskDefinition decoded_json{};
 
 	try
 	{
@@ -42,12 +42,14 @@ invocation_response Handler::operator()(const invocation_request& request)
 			using enum InvokerType;
 			case API_CALL:
 			{
+				spdlog::info("Parsing API call");
 				const auto json_body = extract_body(json_payload);
 				decoded_json = decode_json(json_body);
 				break;
 			}
 			case DIRECT:
 			{
+				spdlog::info("Parsing direct call");
 				decoded_json = decode_json(json_payload);
 				break;
 			}
@@ -55,10 +57,12 @@ invocation_response Handler::operator()(const invocation_request& request)
 	}
 	catch (const nlohmann::json::exception& exception)
 	{
+		spdlog::error("Invalid task json");
 		return response::error("Invalid json", response::ErrorStatus::BAD_REQUEST);
 	}
 	catch (const InvalidPayloadError& exception)
 	{
+		spdlog::error("Invalid payload: {}", exception.what());
 		return response::error(exception.what(), response::ErrorStatus::BAD_REQUEST);
 	}
 
@@ -67,36 +71,43 @@ invocation_response Handler::operator()(const invocation_request& request)
 		switch(decoded_json.type)
 		{
 			case TaskType::MAP:
+				spdlog::info("Starting map task");
 				map(decoded_json);
 				break;
 			case TaskType::REDUCE:
+				spdlog::info("Starting reduce task");
 				reduce(decoded_json);
 				break;
 			case TaskType::ECHO:
+				spdlog::info("Starting echo task");
 				break;
 		}
 	}
 	catch(const std::runtime_error& exception)
 	{
+		spdlog::error("Error during task processing: {}", exception.what());
 		return response::error(exception.what(), response::ErrorStatus::INTERNAL);
 	}
 
 	if(decoded_json.type == TaskType::ECHO)
 	{
+		spdlog::debug("Responding with echo: {}", request.payload);
 		return response::success(request.payload);
 	}
 	else
 	{
+		spdlog::debug("Responding with success status");
 		return response::success("Task completed!");
 	}
 }
 
-void Handler::map(const DecodedJson& payload)
+void Handler::map(const TaskDefinition& payload)
 {
 	herd::proto::MapTask task;
 	const auto& payload_data = payload.data;
 	if(!task.ParseFromArray(payload_data.data(), static_cast<int>(payload_data.size())))
 	{
+		spdlog::error("Invalid protobuf message");
 		throw InvalidPayloadError("Invalid protobuf payload");
 	};
 
@@ -116,6 +127,7 @@ void Handler::map(const DecodedJson& payload)
 	}
 	catch(const std::runtime_error& error)
 	{
+		spdlog::error("Decoding task data error");
 		spdlog::error(error.what());
 		throw;
 	}
@@ -150,7 +162,9 @@ void Handler::map(const DecodedJson& payload)
 
 	try
 	{
+		spdlog::debug("Executor map started");
 		executor.map();
+		spdlog::debug("Executor map completed");
 	}
 	catch(const ExecutorException& exception)
 	{
@@ -159,12 +173,13 @@ void Handler::map(const DecodedJson& payload)
 	}
 }
 
-void Handler::reduce(const DecodedJson& payload)
+void Handler::reduce(const TaskDefinition& payload)
 {
 	herd::proto::ReduceTask task;
 	const auto& payload_data = payload.data;
 	if(!task.ParseFromArray(payload_data.data(), static_cast<int>(payload_data.size())))
 	{
+		spdlog::error("Invalid protobuf message");
 		throw InvalidPayloadError("Invalid protobuf payload");
 	}
 
@@ -190,6 +205,7 @@ void Handler::reduce(const DecodedJson& payload)
 	}
 	catch(const std::runtime_error& error)
 	{
+		spdlog::error("Decoding task data error");
 		spdlog::error(error.what());
 		throw;
 	}
@@ -197,6 +213,14 @@ void Handler::reduce(const DecodedJson& payload)
 	auto executor = Executor();
 
 	spdlog::info("Starting Reduce task");
+	spdlog::info("Input data frames count: {}", input_data_frame_ptrs.size());
+	for(const auto& input_data_frame_ptr: input_data_frame_ptrs)
+	{
+        spdlog::info("Input data frame: {}:{}",
+			input_data_frame_ptr.pointer.uuid.as_string(),
+			input_data_frame_ptr.pointer.partition
+        );
+	}
 	spdlog::info("Output data frame: {}:{}",
 			output_data_frame_ptr.uuid.as_string(),
 			output_data_frame_ptr.partition
@@ -223,7 +247,9 @@ void Handler::reduce(const DecodedJson& payload)
 
 	try
 	{
+		spdlog::debug("Executor reduce started");
 		executor.reduce();
+		spdlog::debug("Executor reduce completed");
 	}
 	catch(const ExecutorException& exception)
 	{
